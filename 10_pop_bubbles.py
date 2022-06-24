@@ -1,15 +1,17 @@
-# 충돌 처리
+# 버블 터트리기
 import pygame
 import os, random, math
 
 # 버블 클래스 생성
 class Bubble(pygame.sprite.Sprite):
-    def __init__(self, image, color, position=(0,0)):
+    def __init__(self, image, color, position=(0,0), row_idx=-1, col_idx=-1):
         super().__init__()
         self.image = image
         self.color = color
         self.rect = image.get_rect(center=position)
         self.radius = 18 # 투사체 속도 게임속도
+        self.row_idx = row_idx
+        self.col_idx = col_idx
 
     def set_rect(self, position):
         self.rect = self.image.get_rect(center = position)
@@ -30,6 +32,11 @@ class Bubble(pygame.sprite.Sprite):
 
         if self.rect.left < 0 or self.rect.right > screen_width: # 튕기기
             self.set_angle(180 - self.angle)
+
+    def set_map_index(self, row_idx, col_idx):
+        self.row_idx = row_idx
+        self.col_idx = col_idx
+
 
 # 발사대 클래스 생성
 class Pointer(pygame.sprite.Sprite):
@@ -80,7 +87,7 @@ def setup():
                 continue
             position = get_bubble_position(row_idx, col_idx)
             image = get_bubble_image(col)
-            bubble_group.add(Bubble(image, col, position))
+            bubble_group.add(Bubble(image, col, position, row_idx, col_idx))
 
 # 버블 좌표 위치
 def get_bubble_position(row_idx, col_idx):
@@ -131,9 +138,10 @@ def get_random_bubble_color():
 def process_collision():
     global curr_bubble, fire
     hit_bubble = pygame.sprite.spritecollideany(curr_bubble, bubble_group, pygame.sprite.collide_mask)
-    if hit_bubble:
+    if hit_bubble or curr_bubble.rect.top <= 0:
         row_idx, col_idx = get_map_index(*curr_bubble.rect.center) # (x,y)
         place_bubble(curr_bubble, row_idx, col_idx)
+        remove_adjacent_bubbles(row_idx, col_idx, curr_bubble.color)
         curr_bubble = None
         fire = False
 
@@ -153,7 +161,59 @@ def place_bubble(bubble, row_idx, col_idx):
     map[row_idx][col_idx] = bubble.color
     position = get_bubble_position(row_idx, col_idx)
     bubble.set_rect(position)
+    bubble.set_map_index(row_idx, col_idx)
     bubble_group.add(bubble)
+
+def remove_adjacent_bubbles(row_idx, col_idx, color):
+    visited.clear()
+    visit(row_idx, col_idx, color)
+    if len(visited) >= 3:
+        remove_visited_bubbles()
+        remove_haning_bubbles()
+
+def visit(row_idx, col_idx, color=None):
+    # 맵의 범위를 벗어나는지 확인
+    if row_idx < 0 or row_idx >= MAP_ROW_COUNT or col_idx < 0 or col_idx >= MAP_COLUMN_COUNT:
+        return
+    # 현재 Cell 의 색상이 color 와 같은지 확인
+    if color and map[row_idx][col_idx] != color:
+        return
+    # 빈 공간이거나, 버블이 존재할 수 없는 위치인지 확인
+    if map[row_idx][col_idx] in [".", "/"]:
+        return
+    # 이미 방문햇는지 여부 확인
+    if (row_idx, col_idx) in visited:
+        return
+    # 방문 처리
+    visited.append((row_idx, col_idx))
+
+    rows = [0, -1, -1, 0, 1, 1]
+    cols = [-1, -1, 0, 1, 0, -1]
+    if row_idx % 2 == 1:
+        rows = [0, -1, -1, 0, 1, 1]
+        cols = [-1, 0, 1, 1, 1, 0]
+
+    for i in range(len(rows)):
+        visit(row_idx + rows[i], col_idx + cols[i], color)
+
+def remove_visited_bubbles():
+    bubbles_to_remove = [b for b in bubble_group if (b.row_idx, b.col_idx) in visited]
+    for bubble in bubbles_to_remove:
+        map[bubble.row_idx][bubble.col_idx] = "."
+        bubble_group.remove(bubble)
+
+def remove_not_visited_bubbles():
+    bubbles_to_remove = [b for b in bubble_group if (b.row_idx, b.col_idx) not in visited]
+    for bubble in bubbles_to_remove:
+        map[bubble.row_idx][bubble.col_idx] = "."
+        bubble_group.remove(bubble)
+
+def remove_haning_bubbles():
+    visited.clear()
+    for col_idx in range(MAP_COLUMN_COUNT):
+        if map[0][col_idx] != ".":
+            visit(0,col_idx)
+    remove_not_visited_bubbles()
 
 pygame.init()
 screen_width = 448
@@ -198,6 +258,7 @@ next_bubble = None # 다음에 쏠 버블
 fire = False # 발사 여부
 
 map = [] # 맵
+visited = [] # 방문 위치 기록
 bubble_group = pygame.sprite.Group()
 setup()
 
@@ -238,10 +299,6 @@ while running:
         if fire:
             curr_bubble.move()
         curr_bubble.draw(screen)
-
-        if curr_bubble.rect.top <= 0:
-            curr_bubble = None
-            fire = False
 
     if next_bubble:
         next_bubble.draw(screen)

@@ -1,4 +1,4 @@
-# 충돌 처리
+# 천장 충돌 처리
 import pygame
 import os, random, math
 
@@ -30,6 +30,7 @@ class Bubble(pygame.sprite.Sprite):
 
         if self.rect.left < 0 or self.rect.right > screen_width: # 튕기기
             self.set_angle(180 - self.angle)
+
 
 # 발사대 클래스 생성
 class Pointer(pygame.sprite.Sprite):
@@ -131,7 +132,7 @@ def get_random_bubble_color():
 def process_collision():
     global curr_bubble, fire
     hit_bubble = pygame.sprite.spritecollideany(curr_bubble, bubble_group, pygame.sprite.collide_mask)
-    if hit_bubble:
+    if hit_bubble or curr_bubble.rect.top <= 0:
         row_idx, col_idx = get_map_index(*curr_bubble.rect.center) # (x,y)
         place_bubble(curr_bubble, row_idx, col_idx)
         curr_bubble = None
@@ -238,10 +239,6 @@ while running:
         if fire:
             curr_bubble.move()
         curr_bubble.draw(screen)
-
-        if curr_bubble.rect.top <= 0:
-            curr_bubble = None
-            fire = False
 
     if next_bubble:
         next_bubble.draw(screen)
