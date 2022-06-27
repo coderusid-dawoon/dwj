@@ -261,23 +261,24 @@ pygame.display.set_caption("Puzzle Bobble")
 clock = pygame.time.Clock()
 
 # 배경 이미지 불러오기
-current_path = os.path.dirname(__file__)
-background = pygame.image.load(os.path.join(current_path, "background2.png"))
-wall = pygame.image.load(os.path.join(current_path, "wall.png"))
-line = pygame.image.load(os.path.join(current_path, "line.png"))
+current_path = os.path.dirname(__file__) # 실행파일경로
+relative_path = os.path.join(current_path, 'images') # 상대경로지정
+background = pygame.image.load(os.path.join(relative_path, "background2.png"))
+wall = pygame.image.load(os.path.join(relative_path, "wall.png"))
+line = pygame.image.load(os.path.join(relative_path, "line.png"))
 
 # 버블 이미지 불러오기
 bubble_images = [
-pygame.image.load(os.path.join(current_path, "red.png")).convert_alpha(), 
-pygame.image.load(os.path.join(current_path, "yellow.png")).convert_alpha(),
-pygame.image.load(os.path.join(current_path, "blue.png")).convert_alpha(),
-pygame.image.load(os.path.join(current_path, "green.png")).convert_alpha(),
-pygame.image.load(os.path.join(current_path, "purple.png")).convert_alpha(),
-pygame.image.load(os.path.join(current_path, "black.png")).convert_alpha()
+pygame.image.load(os.path.join(relative_path, "red.png")).convert_alpha(), 
+pygame.image.load(os.path.join(relative_path, "yellow.png")).convert_alpha(),
+pygame.image.load(os.path.join(relative_path, "blue.png")).convert_alpha(),
+pygame.image.load(os.path.join(relative_path, "green.png")).convert_alpha(),
+pygame.image.load(os.path.join(relative_path, "purple.png")).convert_alpha(),
+pygame.image.load(os.path.join(relative_path, "black.png")).convert_alpha()
 ]
 
 # 발사대 이미지 불러오기
-pointer_image = pygame.image.load(os.path.join(current_path, "pointer2.png"))
+pointer_image = pygame.image.load(os.path.join(relative_path, "pointer2.png"))
 pointer = Pointer(pointer_image, (screen_width // 2, 624), 90)
 
 # 게임 관련 변수
